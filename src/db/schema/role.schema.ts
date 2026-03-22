@@ -12,4 +12,8 @@ export const roleRelations = relations(Role, ({ many }) => ({
   userRoles: many(UserRole),
 }));
 
-export type RoleName = "ADMIN" | "LECTURER" | "STUDENT";
+export const RoleName = {
+  ADMIN: "ADMIN",
+  LECTURE: "LECTURE",
+  STUDENT: "STUDENT",
+};
