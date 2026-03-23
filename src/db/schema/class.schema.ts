@@ -1,6 +1,7 @@
 import { pgTable, uuid, varchar, boolean, integer  } from "drizzle-orm/pg-core";
 import { Subject } from "./subject.schema";
 import { Schedule } from "./schedule.schema";
+import { StudentTakingClassForm } from "./studentTakingClassForm.schema";
 import { relations } from "drizzle-orm";
 
 export const Class = pgTable("class_session", {
@@ -14,6 +15,7 @@ export const Class = pgTable("class_session", {
     lecturerName: varchar("lecturer_name").notNull(),
     isHiddenLecturer: boolean("is_hidden_lecturer").notNull().default(false),
     classCapacity: integer("class_capacity").notNull(),
+    currentCapacity: integer("current_capacity").notNull(),
 });
 
 export const classRelations = relations(Class, ({ many, one }) => ({
@@ -22,4 +24,5 @@ export const classRelations = relations(Class, ({ many, one }) => ({
         references: [Subject.id],
     }),
     schedules: many(Schedule),
+    studentTakingClassForms: many(StudentTakingClassForm),
 }));

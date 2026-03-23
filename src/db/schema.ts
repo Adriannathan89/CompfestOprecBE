@@ -5,3 +5,4 @@ export * from "./schema/schedule.schema";
 export * from "./schema/role.schema";
 export * from "./schema/userRole.schema";
 export * from "./schema/session.schema";
+export * from "./schema/studentTakingClassForm.schema";
