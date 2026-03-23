@@ -2,9 +2,10 @@ import { Inject, Injectable } from "@nestjs/common";
 import { AddSubjectDto } from "./dto/add-subject.dto";
 import { DRIZZLE, type DrizzleDB } from "src/db/drizzle.provider";
 import { Subject } from "src/db/schema";
-import { DatabaseResponse } from "src/db/db.response";
+import { DatabaseResponse } from "src/db/response/db.response";
 import { eq } from "drizzle-orm";
 import { UpdateSubjectDto } from "./dto/update-subject.dto";
+import { FailDatabaseResponse } from "src/db/response/fail-db.response";
 
 @Injectable()
 export class SubjectService {
@@ -18,8 +19,6 @@ export class SubjectService {
                     name: req.name,
                     code: req.code,
                     sks: req.sks,
-                    lecturer: req.lecturer,
-                    isLectureHidden: req.isLectureHidden,
                     semesterTaken: req.semesterTaken,
                 })
                 .returning();
@@ -34,7 +33,16 @@ export class SubjectService {
     }
 
     async getAllSubjects() {
-        const subjects = await this.db.select().from(Subject);
+        const subjects = await this.db.query.Subject.findMany({
+            with: {
+                classes: {
+                    with: {
+                        schedules: true,
+                    },
+                },
+            },
+        });
+
         const databaseResponse = new DatabaseResponse(true, 200, subjects, "Subjects retrieved successfully");
         return databaseResponse;
     }
@@ -48,10 +56,20 @@ export class SubjectService {
 
             const databaseResponse = new DatabaseResponse(true, 200, updatedSubject[0], "Subject updated successfully");
             return databaseResponse;
-            
+
         } catch (error) {
-            const databaseResponse = new DatabaseResponse(false, 500, null, error.message || "Failed to update subject");
+            const databaseResponse = new FailDatabaseResponse(error.message || "Failed to update subject");
             return databaseResponse;
+        }
+    }
+
+    async deleteSubject(id: string) {
+        try {
+            await this.db.delete(Subject).where(eq(Subject.id, id));
+            const databaseResponse = new DatabaseResponse(true, 200, null, "Subject deleted successfully");
+            return databaseResponse;
+        } catch (error) {
+            throw new FailDatabaseResponse(error.message || "Failed to delete subject");
         }
     }
 }

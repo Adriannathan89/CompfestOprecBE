@@ -4,7 +4,7 @@ import { JwtService } from "@nestjs/jwt";
 import { LoginDto } from "./dto/login.dto";
 import { Users } from "src/db/schema";
 import { eq } from "drizzle-orm";
-import { DatabaseResponse } from "src/db/db.response";
+import { DatabaseResponse } from "src/db/response/db.response";
 import * as bcrypt from "bcrypt";
 import { JwtPayload } from "src/guard/jwt-strategy.guard";
 import { Session } from "src/db/schema/session.schema";
@@ -36,7 +36,7 @@ export class AuthService {
         }
 
         const payload: JwtPayload = { userId: user[0].id, username: user[0].username };
-        const token = this.jwt.sign(payload, { expiresIn: '15m' });
+        const token = this.jwt.sign(payload, { expiresIn: '1h' });
         const refreshToken = this.jwt.sign(payload, { expiresIn: '12h' });
 
         await this.db.insert(Session)
@@ -65,7 +65,7 @@ export class AuthService {
             }
 
             const payload: JwtPayload = { userId: session[0].userId, username: session[0].username };
-            const newToken = this.jwt.sign(payload, { expiresIn: '15m' });
+            const newToken = this.jwt.sign(payload, { expiresIn: '1h' });
 
             const res = new DatabaseResponse(true, 200, { token: newToken }, "Token refreshed successfully");
             return res;
