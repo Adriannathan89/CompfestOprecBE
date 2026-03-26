@@ -33,17 +33,24 @@ export class SubjectService {
     }
 
     async getAllSubjects() {
+        const subjects = await this.db.query.Subject.findMany();
+
+        const databaseResponse = new DatabaseResponse(true, 200, subjects, "Subjects retrieved successfully");
+        return databaseResponse;
+    }
+
+    async getAllSubjectsWithDetails() {
         const subjects = await this.db.query.Subject.findMany({
             with: {
                 classes: {
                     with: {
                         schedules: true,
-                    },
-                },
+                    }
+                }
             },
         });
 
-        const databaseResponse = new DatabaseResponse(true, 200, subjects, "Subjects retrieved successfully");
+        const databaseResponse = new DatabaseResponse(true, 200, subjects, "Subjects with details retrieved successfully");
         return databaseResponse;
     }
 

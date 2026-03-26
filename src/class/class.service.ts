@@ -14,13 +14,13 @@ export class ClassService {
         @Inject(DRIZZLE) private db: DrizzleDB
     ) {}
 
-    async createNewClass(req: AddClassDto) {
+    async createNewClass(req: AddClassDto, username: string) {
         try {
             const newClass = await this.db.insert(Class)
                 .values({
                     name: req.name,
                     subjectId: req.subjectId,
-                    lecturerName: req.lecturerName,
+                    lecturerName: username,
                     isHiddenLecturer: req.isHiddenLecturer,
                     classCapacity: req.classCapacity,
                     currentCapacity: req.classCapacity,
@@ -31,6 +31,18 @@ export class ClassService {
 
         } catch (error) {
             throw new FailDatabaseResponse(error.message || "Failed to create class");
+        }
+    }
+
+    async getClassById(id: string) {
+        try {
+            const classData = await this.db.query.Class.findFirst({
+                where: eq(Class.id, id),
+            });
+            const databaseResponse = new DatabaseResponse(true, 200, classData, "Class retrieved successfully");
+            return databaseResponse;
+        } catch (error) {
+            throw new FailDatabaseResponse(error.message || "Failed to retrieve class");
         }
     }
 
@@ -77,6 +89,19 @@ export class ClassService {
         }
         catch (error) {
             throw new FailDatabaseResponse(error.message || "Failed to delete class");
+        }
+    }
+
+    async lecturerGetOwnClass(lecturerName: string) {
+        try {
+            const classes = await this.db.query.Class.findMany({
+                where: eq(Class.lecturerName, lecturerName),
+            });
+
+            const databaseResponse = new DatabaseResponse(true, 200, classes, "Classes retrieved successfully");
+            return databaseResponse;
+        } catch (error) {
+            throw new FailDatabaseResponse(error.message || "Failed to retrieve classes");
         }
     }
 }

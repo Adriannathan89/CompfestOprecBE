@@ -7,7 +7,7 @@ export const Schedule = pgTable("schedule", {
     classId: uuid("class_id")
         .notNull()
         .references(() => Class.id),
-    
+    classroom: varchar("classroom").notNull(), 
     dayOfWeek: integer("day_of_week").notNull(),
     startTime: varchar("start_time").notNull(),
     endTime: varchar("end_time").notNull(),

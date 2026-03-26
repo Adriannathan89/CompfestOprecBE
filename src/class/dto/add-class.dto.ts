@@ -5,11 +5,8 @@ export class AddClassDto {
     name: string;
 
     @IsString()
-    subjectId: string
-
-    @IsString()
-    lecturerName: string;
-
+    subjectId: string;
+    
     @IsBoolean()
     isHiddenLecturer: boolean;
 
