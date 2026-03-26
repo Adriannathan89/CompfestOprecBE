@@ -6,7 +6,7 @@ export const Schedule = pgTable("schedule", {
     id: uuid("id").primaryKey().defaultRandom(),
     classId: uuid("class_id")
         .notNull()
-        .references(() => Class.id),
+        .references(() => Class.id, { onDelete: "cascade" }),
     classroom: varchar("classroom").notNull(), 
     dayOfWeek: integer("day_of_week").notNull(),
     startTime: varchar("start_time").notNull(),
