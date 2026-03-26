@@ -37,6 +37,9 @@ export class ClassService {
     async getClassById(id: string) {
         try {
             const classData = await this.db.query.Class.findFirst({
+                with: {
+                    schedules: true,
+                },
                 where: eq(Class.id, id),
             });
             const databaseResponse = new DatabaseResponse(true, 200, classData, "Class retrieved successfully");
