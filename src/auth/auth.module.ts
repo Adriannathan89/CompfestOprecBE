@@ -5,6 +5,7 @@ import { AuthService } from "./auth.service";
 import { JwtStrategy } from "src/guard/jwt-strategy.guard";
 import { DrizzleModule } from "src/db/db.module";
 import { AuthController } from "./auth.controller";
+import { AuthValidationService } from "./auth-validation.service";
 
 const getJwtSecret = () => {
     const secret = process.env.JWT_SECRET?.trim();
@@ -27,7 +28,7 @@ const getJwtSecret = () => {
         }),
         DrizzleModule,
     ],
-    providers: [AuthService, JwtStrategy],
+    providers: [AuthService, AuthValidationService, JwtStrategy],
     controllers: [AuthController],
     
 }) export class AuthModule {}

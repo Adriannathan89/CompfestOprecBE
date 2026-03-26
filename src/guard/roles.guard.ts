@@ -23,7 +23,7 @@ export class RolesGuard implements CanActivate {
                 role: true,
             },
             where: eq(UserRole.userId, user.userId),
-        });
+        }) as any as Array<{ role: { name: string | null } }>;
 
         const userRoles = data.map(ur => ur.role.name);
 

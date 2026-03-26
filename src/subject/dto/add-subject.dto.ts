@@ -10,12 +10,6 @@ export class AddSubjectDto {
     @IsNumber()
     sks: number;
 
-    @IsString()
-    lecturer: string;
-
-    @IsBoolean()
-    isLectureHidden: boolean;
-    
     @IsNumber()
     semesterTaken: number;
 }

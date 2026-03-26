@@ -1,4 +1,6 @@
-import { integer, pgTable, uuid, varchar, boolean } from "drizzle-orm/pg-core";
+import { integer, pgTable, uuid, varchar } from "drizzle-orm/pg-core";
+import { Class } from "./class.schema";
+import { relations } from "drizzle-orm";
 
 
 export const Subject = pgTable("subject", {
@@ -6,7 +8,9 @@ export const Subject = pgTable("subject", {
     name: varchar("name").notNull(),
     code: varchar("code").notNull().unique(),
     sks: integer("sks").notNull(),
-    lecturer: varchar("lecturer").notNull(),
-    isLectureHidden: boolean("is_lecture_hidden").notNull().default(true),
     semesterTaken: integer("semester_taken").notNull(),
 });
+
+export const subjectRelations = relations(Subject, ({ many }) => ({
+    classes: many(Class),
+}));
