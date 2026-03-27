@@ -6,6 +6,7 @@ import { DatabaseResponse } from "src/db/response/db.response";
 import { eq } from "drizzle-orm";
 import { UpdateSubjectDto } from "./dto/update-subject.dto";
 import { FailDatabaseResponse } from "src/db/response/fail-db.response";
+import { type SubjectRequestByStudentResponse } from "src/db/response/subjectRequestByStudentResponse";
 
 @Injectable()
 export class SubjectService {
@@ -27,8 +28,7 @@ export class SubjectService {
 
             return databaseResponse;
         } catch (error) {
-            const databaseResponse = new DatabaseResponse(false, 500, null, error.message || "Failed to create subject");
-            return databaseResponse;
+            throw new FailDatabaseResponse("Failed to create subject");
         }
     }
 
@@ -49,9 +49,52 @@ export class SubjectService {
                 }
             },
         });
+        
+        
+        const res: SubjectRequestByStudentResponse[] = subjects.map(subject => ({
+            id: subject.id,
+            name: subject.name,
+            code: subject.code,
+            sks: subject.sks,
+            semesterTaken: subject.semesterTaken,
+            classes: subject.classes.map(cls => ({
+                id: cls.id,
+                name: cls.name,
+                lecturerName: cls.isHiddenLecturer ? "" : cls.lecturerName,
+                isHiddenLecturer: cls.isHiddenLecturer,
+                classCapacity: cls.classCapacity,
+                currentCapacity: cls.currentCapacity,
+                schedules: cls.schedules.map(schedule => ({
+                    id: schedule.id,
+                    dayOfWeek: schedule.dayOfWeek,
+                    startTime: schedule.startTime,
+                    endTime: schedule.endTime,
+                    classroom: schedule.classroom,
+                }))
+            }))
+        }));
 
-        const databaseResponse = new DatabaseResponse(true, 200, subjects, "Subjects with details retrieved successfully");
+        const databaseResponse = new DatabaseResponse(true, 200, res, "Subjects with details retrieved successfully");
         return databaseResponse;
+    }
+
+    async getSubjectById(id: string) {
+        try {
+            const subject = await this.db.query.Subject.findFirst({
+                with: {
+                    classes: {
+                        with: {
+                            schedules: true,
+                        }
+                    }
+                },
+                where: eq(Subject.id, id),
+            });
+            const databaseResponse = new DatabaseResponse(true, 200, subject, "Subject retrieved successfully");
+            return databaseResponse;
+        } catch (error) {
+            throw new FailDatabaseResponse("Failed to retrieve subject");
+        }
     }
 
     async updateSubject(id: string, req: UpdateSubjectDto) {
@@ -65,8 +108,7 @@ export class SubjectService {
             return databaseResponse;
 
         } catch (error) {
-            const databaseResponse = new FailDatabaseResponse(error.message || "Failed to update subject");
-            return databaseResponse;
+            throw new FailDatabaseResponse("Failed to update subject");
         }
     }
 
@@ -76,7 +118,7 @@ export class SubjectService {
             const databaseResponse = new DatabaseResponse(true, 200, null, "Subject deleted successfully");
             return databaseResponse;
         } catch (error) {
-            throw new FailDatabaseResponse(error.message || "Failed to delete subject");
+            throw new FailDatabaseResponse("Failed to delete subject");
         }
     }
 }

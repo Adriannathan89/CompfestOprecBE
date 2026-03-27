@@ -10,7 +10,7 @@ export const Class = pgTable("class_session", {
 
     subjectId: uuid("subject_id")
         .notNull()
-        .references(() => Subject.id),
+        .references(() => Subject.id, { onDelete: "cascade" }),
 
     lecturerName: varchar("lecturer_name").notNull(),
     isHiddenLecturer: boolean("is_hidden_lecturer").notNull().default(false),

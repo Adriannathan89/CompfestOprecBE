@@ -23,8 +23,7 @@ export class UserService {
         });
 
         if (!studentRole) {
-            const res = new FailDatabaseResponse("Default role not found");
-            return res;
+            throw new FailDatabaseResponse("Student role not found");
         }
 
         const createdUser = await this.db
@@ -49,8 +48,7 @@ export class UserService {
             
         } catch (error) {
             await this.db.delete(Users).where(eq(Users.id, createdUser[0].id));
-            const res = new FailDatabaseResponse("Failed to assign role to user");
-            return res;
+            throw new FailDatabaseResponse("Failed to assign role to user");
         }
     }
 }

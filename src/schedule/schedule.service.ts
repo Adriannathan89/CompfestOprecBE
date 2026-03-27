@@ -24,7 +24,7 @@ export class ScheduleService {
         const res = new DatabaseResponse(true, 201, newSchedule[0], "Schedule created successfully");
         return res;
         } catch (error) {
-            throw new FailDatabaseResponse(error.message || "Failed to create schedule");
+            throw new FailDatabaseResponse("Failed to create schedule");
         }
     }
 
@@ -36,7 +36,7 @@ export class ScheduleService {
             const res = new DatabaseResponse(true, 200, null, "Schedule deleted successfully");
             return res;
         } catch (error) {
-            throw new FailDatabaseResponse(error.message || "Failed to delete schedule");
+            throw new FailDatabaseResponse("Failed to delete schedule");
         }
     }
 
@@ -50,7 +50,7 @@ export class ScheduleService {
             const res = new DatabaseResponse(true, 200, updatedSchedule[0], "Schedule updated successfully");
             return res;
         } catch (error) {
-            throw new FailDatabaseResponse(error.message || "Failed to update schedule");
+            throw new FailDatabaseResponse("Failed to update schedule");
         }
     }
 }
