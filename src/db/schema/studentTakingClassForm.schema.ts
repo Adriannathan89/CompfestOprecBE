@@ -12,7 +12,7 @@ export const StudentTakingClassForm = pgTable("student_taking_class_form", {
         .notNull()
         .references(() => Class.id),
     takingPosition: integer("taking_position").notNull(),
-    isApproved: boolean("is_approved").notNull().default(false)
+    isFinalized: boolean("is_finalized").notNull().default(false)
 });
 
 export const studentTakingClassFormRelations = relations(StudentTakingClassForm, ({ one }) => ({

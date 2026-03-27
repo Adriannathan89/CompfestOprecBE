@@ -1,6 +1,6 @@
 import { Injectable, Inject } from "@nestjs/common";
 import { DRIZZLE, type DrizzleDB } from "src/db/drizzle.provider";
-import { Class, Users } from "src/db/schema";
+import { Class, Schedule, Users } from "src/db/schema";
 import { and, eq, gt, sql } from "drizzle-orm";
 import { FailDatabaseResponse } from "src/db/response/fail-db.response";
 import { StudentTakingClassForm } from "src/db/schema";
@@ -107,26 +107,6 @@ export class StudentTakingClassFormService {
                 .where(eq(Users.id, form[0].studentId));
 
             const response = new DatabaseResponse(true, 200, null, "Successfully deleted student taking class form");
-            return response;
-        } catch (error) {
-            throw new FailDatabaseResponse(error.message);
-        }
-    }
-
-    async approveStudentTakingClassForm(formId: string) {
-        try {
-            const updated = await this.db.update(StudentTakingClassForm)
-                .set({
-                    isApproved: true
-                })
-                .where(eq(StudentTakingClassForm.id, formId))
-                .returning();
-
-            if (updated.length === 0) {
-                throw new FailDatabaseResponse("Failed to approve student taking class form");
-            }
-
-            const response = new DatabaseResponse(true, 200, updated[0], "Student taking class form approved successfully");
             return response;
         } catch (error) {
             throw new FailDatabaseResponse(error.message);
