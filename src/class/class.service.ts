@@ -30,7 +30,7 @@ export class ClassService {
             return databaseResponse;
 
         } catch (error) {
-            throw new FailDatabaseResponse(error.message || "Failed to create class");
+            throw new FailDatabaseResponse("Failed to create class");
         }
     }
 
@@ -91,20 +91,23 @@ export class ClassService {
             return databaseResponse;
         }
         catch (error) {
-            throw new FailDatabaseResponse(error.message || "Failed to delete class");
+            throw new FailDatabaseResponse("Failed to delete class");
         }
     }
 
     async lecturerGetOwnClass(lecturerName: string) {
         try {
             const classes = await this.db.query.Class.findMany({
+                with : {
+                    schedules: true,
+                },
                 where: eq(Class.lecturerName, lecturerName),
             });
 
             const databaseResponse = new DatabaseResponse(true, 200, classes, "Classes retrieved successfully");
             return databaseResponse;
         } catch (error) {
-            throw new FailDatabaseResponse(error.message || "Failed to retrieve classes");
+            throw new FailDatabaseResponse("Failed to retrieve classes");
         }
     }
 }

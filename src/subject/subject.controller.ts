@@ -32,6 +32,12 @@ export class SubjectController {
     }
 
     @Roles(RoleName.ADMIN, RoleName.LECTURE)
+    @Get("get/:id")
+    async getSubjectById(@Param("id") id: string) {
+        return await this.subjectService.getSubjectById(id);
+    }
+
+    @Roles(RoleName.ADMIN, RoleName.LECTURE)
     @Patch("update/:id")
     async updateSubject(@Body() payload: UpdateSubjectDto, @Param("id") id: string) {
         return await this.subjectService.updateSubject(id, payload);
