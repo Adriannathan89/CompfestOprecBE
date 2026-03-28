@@ -19,4 +19,11 @@ export class UserController {
     const username = req.user.username;
     return { username };
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get("finalize-status")
+  async getFinalizeStatus(@Req() req) {
+    const userId = req.user.userId;
+    return this.userService.getFinalizeStatus(userId);
+  }
 }

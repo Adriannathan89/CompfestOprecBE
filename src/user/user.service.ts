@@ -8,7 +8,7 @@ import { RegisterUserDto } from "./dto/register-user.dto";
 import * as bcrypt from "bcrypt";
 import { DatabaseResponse } from "src/db/response/db.response";
 import { Role } from "src/db/schema/role.schema";
-import { UserRole } from "src/db/schema";
+import { StudentTakingClassForm, UserRole } from "src/db/schema";
 import { FailDatabaseResponse } from "src/db/response/fail-db.response";
 
 @Injectable()
@@ -50,5 +50,15 @@ export class UserService {
             await this.db.delete(Users).where(eq(Users.id, createdUser[0].id));
             throw new FailDatabaseResponse("Failed to assign role to user");
         }
+    }
+
+    async getFinalizeStatus(userId: string) {
+        const takingForms = await this.db.query.StudentTakingClassForm.findMany({
+            where: eq(StudentTakingClassForm.studentId, userId),
+        });
+        const isFinalized = takingForms[0].isFinalized;
+        
+        const res = new DatabaseResponse(true, 200, { isFinalized }, "Finalize status retrieved successfully");
+        return res;
     }
 }

@@ -75,7 +75,7 @@ describe("StudentFinalizeClassFormService", () => {
         service = new StudentFinalizeClassFormService(dbMock);
     });
 
-    it("should return empty conflict classes when schedules do not overlap", async () => {
+    it("should return empty conflict response when schedules do not overlap", async () => {
         const forms: MockForm[] = [
             makeForm("f1", studentId, "class-A", [
                 { dayOfWeek: 1, startTime: "08:00", endTime: "10:00" },
@@ -87,13 +87,16 @@ describe("StudentFinalizeClassFormService", () => {
 
         findManyMock.mockResolvedValueOnce(forms);
 
-        const result = await service.loadAllConflictClasses(studentId);
+        const result: any = await service.loadAllConflictClasses(studentId);
 
-        expect(result).toEqual([]);
+        expect(result.success).toBe(true);
+        expect(result.statusCode).toBe(200);
+        expect(result.message).toBe("No schedule conflicts detected");
+        expect(result.data).toEqual([]);
         expect(findManyMock).toHaveBeenCalledTimes(1);
     });
 
-    it("should treat touching boundary as non-conflict (10:00-10:00)", async () => {
+    it("should return empty conflict response for touching boundary non-conflict (10:00-10:00)", async () => {
         const forms: MockForm[] = [
             makeForm("f1", studentId, "class-A", [
                 { dayOfWeek: 3, startTime: "09:00", endTime: "10:00" },
@@ -105,9 +108,12 @@ describe("StudentFinalizeClassFormService", () => {
 
         findManyMock.mockResolvedValueOnce(forms);
 
-        const result = await service.loadAllConflictClasses(studentId);
+        const result: any = await service.loadAllConflictClasses(studentId);
 
-        expect(result).toEqual([]);
+        expect(result.success).toBe(true);
+        expect(result.statusCode).toBe(200);
+        expect(result.message).toBe("No schedule conflicts detected");
+        expect(result.data).toEqual([]);
         expect(findManyMock).toHaveBeenCalledTimes(1);
     });
 
@@ -124,11 +130,14 @@ describe("StudentFinalizeClassFormService", () => {
         // First call is from validateScheduleConflict, second call is for class details mapping.
         findManyMock.mockResolvedValueOnce(forms).mockResolvedValueOnce(forms);
 
-        const result = await service.loadAllConflictClasses(studentId);
+        const result: any = await service.loadAllConflictClasses(studentId);
 
-        expect(result).toHaveLength(1);
-        expect(result[0].class1?.id).toBe("class-A");
-        expect(result[0].class2?.id).toBe("class-B");
+        expect(result.success).toBe(true);
+        expect(result.statusCode).toBe(200);
+        expect(result.message).toBe("Conflict classes retrieved successfully");
+        expect(result.data).toHaveLength(1);
+        expect(result.data[0].class1?.id).toBe("class-A");
+        expect(result.data[0].class2?.id).toBe("class-B");
         expect(findManyMock).toHaveBeenCalledTimes(2);
     });
 
@@ -148,11 +157,14 @@ describe("StudentFinalizeClassFormService", () => {
         // First call is from validateScheduleConflict, second call is for class details mapping.
         findManyMock.mockResolvedValueOnce(forms).mockResolvedValueOnce(forms);
 
-        const result = await service.loadAllConflictClasses(studentId);
+        const result: any = await service.loadAllConflictClasses(studentId);
 
-        expect(result).toHaveLength(1);
-        expect(result[0].class1?.id).toBe("class-A");
-        expect(result[0].class2?.id).toBe("class-B");
+        expect(result.success).toBe(true);
+        expect(result.statusCode).toBe(200);
+        expect(result.message).toBe("Conflict classes retrieved successfully");
+        expect(result.data).toHaveLength(1);
+        expect(result.data[0].class1?.id).toBe("class-A");
+        expect(result.data[0].class2?.id).toBe("class-B");
         expect(findManyMock).toHaveBeenCalledTimes(2);
     });
 
@@ -178,7 +190,7 @@ describe("StudentFinalizeClassFormService", () => {
         expect(result.success).toBe(true);
         expect(result.statusCode).toBe(200);
         expect(result.message).toBe("Successfully finalized class form");
-        expect(result.data).toEqual(updatedRows);
+        expect(result.data).toEqual(null);
         expect(updateMock).toHaveBeenCalledTimes(1);
         expect(setMock).toHaveBeenCalledTimes(1);
         expect(whereMock).toHaveBeenCalledTimes(1);
@@ -208,7 +220,7 @@ describe("StudentFinalizeClassFormService", () => {
 
         expect(result.success).toBe(true);
         expect(result.statusCode).toBe(200);
-        expect(result.data).toHaveLength(5);
+        expect(result.data).toBe(null);
         expect(updateMock).toHaveBeenCalledTimes(1);
     });
 

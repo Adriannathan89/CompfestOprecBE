@@ -5,6 +5,7 @@ import { FailDatabaseResponse } from "src/db/response/fail-db.response";
 import { StudentTakingClassForm } from "src/db/schema";
 import { DatabaseResponse } from "src/db/response/db.response";
 import { ConflictRequestResponse } from "src/db/response/conflict-req.response";
+import { ClassResponseByStudent } from "src/db/response/classResponseByStudent";
 
 interface ScheduleConflict {
     class1Id: string;
@@ -93,7 +94,8 @@ export class StudentFinalizeClassFormService {
         const res = await this.validateScheduleConflict(userId);
 
         if (!res.hasConflict) {
-            return [];
+            const databaseResponse = new DatabaseResponse(true, 200, [], "No schedule conflicts detected");
+            return databaseResponse;
         }
 
         const allForms = await this.db.query.StudentTakingClassForm.findMany({
@@ -113,12 +115,35 @@ export class StudentFinalizeClassFormService {
         const classById = new Map(allClasses.map(cls => [cls.id, cls]));
 
         const allConflictClasses = res.conflicts.map(conflict => {
-            const class1 = classById.get(conflict.class1Id);
-            const class2 = classById.get(conflict.class2Id);
+            const classData1 = classById.get(conflict.class1Id) as any;
+            const classData2 = classById.get(conflict.class2Id) as any;
+
+            const class1: ClassResponseByStudent = {
+                id: classData1.id,
+                name: classData1.name,
+                schedules: classData1.schedules,
+                lecturerName: classData1.isHiddenLecturer ? "" : classData1.lecturerName,
+                isHiddenLecturer: classData1.isHiddenLecturer,
+                classCapacity: classData1.classCapacity,
+                currentCapacity: classData1.currentCapacity,
+            };
+
+            const class2: ClassResponseByStudent = {
+                id: classData2.id,
+                name: classData2.name,
+                schedules: classData2.schedules,
+                lecturerName: classData2.isHiddenLecturer ? "" : classData2.lecturerName,
+                isHiddenLecturer: classData2.isHiddenLecturer,
+                classCapacity: classData2.classCapacity,
+                currentCapacity: classData2.currentCapacity,
+            };
+
             return { class1, class2 };
         }).filter(item => item.class1 && item.class2);
 
-        return allConflictClasses;
+        const databaseResponse = new DatabaseResponse(true, 200, allConflictClasses, "Conflict classes retrieved successfully");
+
+        return databaseResponse;
     }
 
     async finalizeStudentTakingClassForm(userId: string) {
@@ -129,7 +154,7 @@ export class StudentFinalizeClassFormService {
                 throw new ConflictRequestResponse("Schedule conflict detected", res.conflicts);
             }
 
-            const updatedForms = await this.db.update(StudentTakingClassForm)
+            await this.db.update(StudentTakingClassForm)
                 .set({
                     isFinalized: true,
                 })
@@ -141,7 +166,7 @@ export class StudentFinalizeClassFormService {
                 )
                 .returning();
 
-            const response = new DatabaseResponse(true, 200, updatedForms, "Successfully finalized class form");
+            const response = new DatabaseResponse(true, 200, null, "Successfully finalized class form");
             return response;
         } catch (error) {
 

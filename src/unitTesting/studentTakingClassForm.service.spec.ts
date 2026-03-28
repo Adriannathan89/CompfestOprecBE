@@ -273,7 +273,7 @@ describe("StudentTakingClassFormService", () => {
 
         const service = new StudentTakingClassFormService(dbMock);
 
-        const result = await service.deleteStudentTakingClassForm("form-1");
+        const result = await service.deleteStudentTakingClassForm("class-1", "user-1");
 
         expect(result.success).toBe(true);
         expect(result.statusCode).toBe(200);
