@@ -1,4 +1,4 @@
-import { pgTable, uuid, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, uuid, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { Users } from "./user.schema";
 import { Class } from "../schema";
@@ -11,8 +11,9 @@ export const StudentTakingClassForm = pgTable("student_taking_class_form", {
     classId: uuid("class_id")
         .notNull()
         .references(() => Class.id),
+    createdAt: timestamp("created_at").notNull().default(new Date()),
     takingPosition: integer("taking_position").notNull(),
-    isApproved: boolean("is_approved").notNull().default(false)
+    isFinalized: boolean("is_finalized").notNull().default(false)
 });
 
 export const studentTakingClassFormRelations = relations(StudentTakingClassForm, ({ one }) => ({
