@@ -7,6 +7,7 @@ import { ClassModule } from './class/class.module';
 import { StudentTakingClassFormModule } from './studentTakingClassForm/studentTakingClassForm.module';
 import { ScheduleModule } from './schedule/shedule.module';
 import { ScoringComponentModule } from './scoringComponent/scoringComponent.module';
+import { StudentScoreModule } from './studentScore/studentScore.module';
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { ScoringComponentModule } from './scoringComponent/scoringComponent.modu
     ClassModule,
     StudentTakingClassFormModule,
     ScheduleModule,
-    ScoringComponentModule
+    ScoringComponentModule,
+    StudentScoreModule
   ],
 })
 export class AppModule {}
