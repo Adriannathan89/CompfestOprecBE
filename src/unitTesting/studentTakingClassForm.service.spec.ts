@@ -333,4 +333,130 @@ describe("StudentTakingClassFormService", () => {
         expect(result.message).toBe("Successfully retrieved student taking class forms");
         expect(result.data).toHaveLength(1);
     });
+
+    it("should throw when class or student is not found during create", async () => {
+        const { dbMock } = createDbMock({
+            classRecord: {
+                id: "class-1",
+                classCapacity: 3,
+                currentCapacity: 3,
+                subject: { sks: 3 },
+            },
+            userRecord: {
+                id: "user-1",
+                currentSKS: 18,
+            },
+            forms: [],
+        });
+
+        dbMock.query.Class.findFirst.mockResolvedValueOnce(null);
+
+        const service = new StudentTakingClassFormService(dbMock);
+
+        await expect(service.createStudentTakingClassForm("user-1", "class-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
+    });
+
+    it("should throw when get forms query fails", async () => {
+        const { dbMock } = createDbMock({
+            classRecord: {
+                id: "class-1",
+                classCapacity: 3,
+                currentCapacity: 2,
+                subject: { sks: 3 },
+            },
+            userRecord: {
+                id: "user-1",
+                currentSKS: 18,
+            },
+            forms: [],
+        });
+
+        dbMock.query.StudentTakingClassForm = {
+            findMany: jest.fn(async () => {
+                throw new Error("query failed");
+            }),
+        };
+
+        const service = new StudentTakingClassFormService(dbMock);
+
+        await expect(service.getStudentTakingClassFormsByStudentId("user-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
+    });
+
+    it("should throw fallback message when get forms fails without message", async () => {
+        const { dbMock } = createDbMock({
+            classRecord: {
+                id: "class-1",
+                classCapacity: 3,
+                currentCapacity: 2,
+                subject: { sks: 3 },
+            },
+            userRecord: {
+                id: "user-1",
+                currentSKS: 18,
+            },
+            forms: [],
+        });
+
+        dbMock.query.StudentTakingClassForm = {
+            findMany: jest.fn(async () => {
+                throw {};
+            }),
+        };
+
+        const service = new StudentTakingClassFormService(dbMock);
+
+        await expect(service.getStudentTakingClassFormsByStudentId("user-1")).rejects.toMatchObject({
+            message: "Failed to retrieve student taking class forms",
+        });
+    });
+
+    it("should throw when deleting non-existing student taking class form", async () => {
+        const { dbMock } = createDbMock({
+            classRecord: {
+                id: "class-1",
+                classCapacity: 3,
+                currentCapacity: 2,
+                subject: { sks: 3 },
+            },
+            userRecord: {
+                id: "user-1",
+                currentSKS: 21,
+            },
+            forms: [],
+        });
+
+        const service = new StudentTakingClassFormService(dbMock);
+
+        await expect(service.deleteStudentTakingClassForm("class-1", "user-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
+    });
+
+    it("should throw when class or student is not found during delete", async () => {
+        const { dbMock } = createDbMock({
+            classRecord: {
+                id: "class-1",
+                classCapacity: 3,
+                currentCapacity: 2,
+                subject: { sks: 3 },
+            },
+            userRecord: {
+                id: "user-1",
+                currentSKS: 21,
+            },
+            forms: [
+                {
+                    id: "form-1",
+                    studentId: "user-1",
+                    classId: "class-1",
+                    takingPosition: 1,
+                    isFinalized: false,
+                },
+            ],
+        });
+
+        dbMock.query.Users.findFirst.mockResolvedValueOnce(null);
+
+        const service = new StudentTakingClassFormService(dbMock);
+
+        await expect(service.deleteStudentTakingClassForm("class-1", "user-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
+    });
 });

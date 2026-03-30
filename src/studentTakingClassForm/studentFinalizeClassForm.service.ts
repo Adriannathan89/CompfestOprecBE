@@ -118,6 +118,10 @@ export class StudentFinalizeClassFormService {
             const classData1 = classById.get(conflict.class1Id) as any;
             const classData2 = classById.get(conflict.class2Id) as any;
 
+            if (!classData1 || !classData2) {
+                return { class1: null, class2: null };
+            }
+
             const class1: ClassResponseByStudent = {
                 id: classData1.id,
                 name: classData1.name,

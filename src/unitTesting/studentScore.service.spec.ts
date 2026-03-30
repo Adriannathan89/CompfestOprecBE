@@ -244,4 +244,83 @@ describe("StudentScoreService", () => {
 
         await expect(service.calculateFinalScore("form-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
     });
+
+    it("should throw fail response when input student score insert fails", async () => {
+        const { dbMock, mocks } = createDbMock();
+        mocks.insertReturningMock.mockRejectedValueOnce(new Error("insert failed"));
+
+        const service = new StudentScoreService(dbMock);
+
+        await expect(service.inputStudentScore({
+            studentTakingClassFormId: "form-1",
+            scoringComponentId: "component-1",
+            percentage: "80",
+            isPublished: true,
+        })).rejects.toBeInstanceOf(FailDatabaseResponse);
+    });
+
+    it("should throw fail response when update student score update fails", async () => {
+        const { dbMock, mocks } = createDbMock();
+        mocks.updateReturningMock.mockRejectedValueOnce(new Error("update failed"));
+
+        const service = new StudentScoreService(dbMock);
+
+        await expect(service.updateStudentScore("score-1", {
+            percentage: "88",
+            isPublished: true,
+        })).rejects.toBeInstanceOf(FailDatabaseResponse);
+    });
+
+    it("should throw fail response when delete student score delete fails", async () => {
+        const { dbMock, mocks } = createDbMock();
+        mocks.deleteWhereMock.mockRejectedValueOnce(new Error("delete failed"));
+
+        const service = new StudentScoreService(dbMock);
+
+        await expect(service.deleteStudentScore("score-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
+    });
+
+    it("should return E with zero score when no components are found", async () => {
+        const { dbMock, mocks } = createDbMock();
+        mocks.scoreFindManyMock.mockResolvedValueOnce([]);
+
+        const service = new StudentScoreService(dbMock);
+
+        const result: any = await service.calculateFinalScore("form-1");
+
+        expect(result.success).toBe(true);
+        expect(result.data.FinalGradePercentage).toBe(0);
+        expect(result.data.FinalGrade).toBe("E");
+        expect(result.data.message).toBe("Final Score");
+        expect(result.data.scoringDetails).toEqual([]);
+    });
+
+    it.each([
+        { score: "75", expectedGrade: "B+" },
+        { score: "70", expectedGrade: "B" },
+        { score: "65", expectedGrade: "B-" },
+        { score: "60", expectedGrade: "C+" },
+        { score: "55", expectedGrade: "C" },
+        { score: "50", expectedGrade: "D" },
+        { score: "49.99", expectedGrade: "E" },
+    ])("should map score $score to $expectedGrade", async ({ score, expectedGrade }) => {
+        const { dbMock, mocks } = createDbMock();
+        mocks.scoreFindManyMock.mockResolvedValueOnce([
+            {
+                id: "score-1",
+                percentage: score,
+                isPublished: true,
+                scoringComponent: {
+                    name: "Final",
+                    weight: 100,
+                },
+            },
+        ]);
+
+        const service = new StudentScoreService(dbMock);
+
+        const result: any = await service.calculateFinalScore("form-1");
+
+        expect(result.data.FinalGrade).toBe(expectedGrade);
+    });
 });

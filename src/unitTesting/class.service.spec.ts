@@ -107,6 +107,29 @@ describe("ClassService", () => {
         expect(result.data).toMatchObject({ id: "class-1", classCapacity: 5, currentCapacity: 3 });
     });
 
+    it("should keep currentCapacity equal to classCapacity when no students exist", async () => {
+        const { dbMock, mocks } = createDbMock();
+        mocks.formsFindManyMock.mockResolvedValueOnce([]);
+        mocks.updateReturningMock.mockResolvedValueOnce([
+            {
+                id: "class-1",
+                classCapacity: 5,
+                currentCapacity: 5,
+            },
+        ]);
+
+        const service = new ClassService(dbMock);
+
+        await service.updateClassInfo("class-1", { classCapacity: 5 });
+
+        expect(mocks.updateSetMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                classCapacity: 5,
+                currentCapacity: 5,
+            }),
+        );
+    });
+
     it("should update non-capacity fields without querying student forms", async () => {
         const { dbMock, mocks } = createDbMock();
         mocks.updateReturningMock.mockResolvedValueOnce([
@@ -229,5 +252,75 @@ describe("ClassService", () => {
         expect(result.success).toBe(true);
         expect(result.statusCode).toBe(200);
         expect(result.message).toBe("Class deleted successfully");
+    });
+
+    it("should throw fail response when create class insert fails", async () => {
+        const { dbMock, mocks } = createDbMock();
+        mocks.insertReturningMock.mockRejectedValueOnce(new Error("insert failed"));
+
+        const service = new ClassService(dbMock);
+
+        await expect(service.createNewClass({
+            name: "Pemrograman",
+            subjectId: "subject-1",
+            isHiddenLecturer: false,
+            classCapacity: 30,
+        }, "lecturer-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
+    });
+
+    it("should throw fail response when get class by id query fails", async () => {
+        const { dbMock, mocks } = createDbMock();
+        mocks.classFindFirstMock.mockRejectedValueOnce(new Error("read failed"));
+
+        const service = new ClassService(dbMock);
+
+        await expect(service.getClassById("class-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
+    });
+
+    it("should throw fallback message when get class by id fails without message", async () => {
+        const { dbMock, mocks } = createDbMock();
+        mocks.classFindFirstMock.mockRejectedValueOnce({});
+
+        const service = new ClassService(dbMock);
+
+        await expect(service.getClassById("class-1")).rejects.toMatchObject({
+            message: "Failed to retrieve class",
+        });
+    });
+
+    it("should throw fail response when update class query fails", async () => {
+        const { dbMock, mocks } = createDbMock();
+        mocks.updateReturningMock.mockRejectedValueOnce(new Error("update failed"));
+
+        const service = new ClassService(dbMock);
+
+        await expect(service.updateClassInfo("class-1", { name: "Updated" })).rejects.toBeInstanceOf(FailDatabaseResponse);
+    });
+
+    it("should throw fail response when delete class query fails", async () => {
+        const { dbMock, mocks } = createDbMock();
+        mocks.deleteWhereMock.mockRejectedValueOnce(new Error("delete failed"));
+
+        const service = new ClassService(dbMock);
+
+        await expect(service.deleteClass("class-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
+    });
+
+    it("should throw fail response when lecturer own class query fails", async () => {
+        const { dbMock, mocks } = createDbMock();
+        mocks.classFindManyMock.mockRejectedValueOnce(new Error("read failed"));
+
+        const service = new ClassService(dbMock);
+
+        await expect(service.lecturerGetOwnClass("lecturer-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
+    });
+
+    it("should throw fail response when class participants query fails", async () => {
+        const { dbMock, mocks } = createDbMock();
+        mocks.formsFindManyMock.mockRejectedValueOnce(new Error("read failed"));
+
+        const service = new ClassService(dbMock);
+
+        await expect(service.getClassParticipants("class-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
     });
 });

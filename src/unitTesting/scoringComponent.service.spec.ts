@@ -154,4 +154,38 @@ describe("ScoringComponentService", () => {
 
         await expect(service.getScoringComponentsByClassId("class-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
     });
+
+    it("should throw fail response when create scoring component fails", async () => {
+        const { dbMock, mocks } = createDbMock();
+        mocks.insertReturningMock.mockRejectedValueOnce(new Error("insert failed"));
+
+        const service = new ScoringComponentService(dbMock);
+
+        await expect(service.createScoringComponent({
+            classId: "class-1",
+            name: "UTS",
+            weight: 30,
+        })).rejects.toBeInstanceOf(FailDatabaseResponse);
+    });
+
+    it("should throw fail response when update scoring component fails", async () => {
+        const { dbMock, mocks } = createDbMock();
+        mocks.updateReturningMock.mockRejectedValueOnce(new Error("update failed"));
+
+        const service = new ScoringComponentService(dbMock);
+
+        await expect(service.updateScoringComponent("component-1", {
+            name: "UTS Updated",
+            weight: 35,
+        })).rejects.toBeInstanceOf(FailDatabaseResponse);
+    });
+
+    it("should throw fail response when delete scoring component fails", async () => {
+        const { dbMock, mocks } = createDbMock();
+        mocks.deleteWhereMock.mockRejectedValueOnce(new Error("delete failed"));
+
+        const service = new ScoringComponentService(dbMock);
+
+        await expect(service.deleteScoringComponent("component-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
+    });
 });

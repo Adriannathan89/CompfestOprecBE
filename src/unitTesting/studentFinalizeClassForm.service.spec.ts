@@ -264,4 +264,109 @@ describe("StudentFinalizeClassFormService", () => {
 
         await expect(service.finalizeStudentTakingClassForm(studentId)).rejects.toBeInstanceOf(FailDatabaseResponse);
     });
+
+    it("should not mark conflict for overlapping schedules within the same class", async () => {
+        const sameClassSchedules: MockForm[] = [
+            makeForm("f1", studentId, "class-A", [
+                { dayOfWeek: 1, startTime: "08:00", endTime: "10:00" },
+                { dayOfWeek: 1, startTime: "09:00", endTime: "11:00" },
+            ]),
+        ];
+
+        findManyMock.mockResolvedValueOnce(sameClassSchedules);
+
+        const result: any = await service.loadAllConflictClasses(studentId);
+
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual([]);
+        expect(result.message).toBe("No schedule conflicts detected");
+    });
+
+    it("should hide lecturer name for class marked as hidden in conflict response", async () => {
+        const formsWithHiddenLecturer: any[] = [
+            {
+                id: "f1",
+                studentId,
+                classId: "class-A",
+                isFinalized: false,
+                class: {
+                    id: "class-A",
+                    name: "A",
+                    lecturerName: "lecturer-a",
+                    isHiddenLecturer: true,
+                    classCapacity: 30,
+                    currentCapacity: 20,
+                    schedules: [{ id: "a1", classId: "class-A", dayOfWeek: 1, startTime: "08:00", endTime: "10:00" }],
+                },
+            },
+            {
+                id: "f2",
+                studentId,
+                classId: "class-B",
+                isFinalized: false,
+                class: {
+                    id: "class-B",
+                    name: "B",
+                    lecturerName: "lecturer-b",
+                    isHiddenLecturer: false,
+                    classCapacity: 30,
+                    currentCapacity: 15,
+                    schedules: [{ id: "b1", classId: "class-B", dayOfWeek: 1, startTime: "09:00", endTime: "11:00" }],
+                },
+            },
+        ];
+
+        findManyMock.mockResolvedValueOnce(formsWithHiddenLecturer).mockResolvedValueOnce(formsWithHiddenLecturer);
+
+        const result: any = await service.loadAllConflictClasses(studentId);
+
+        expect(result.success).toBe(true);
+        expect(result.data).toHaveLength(1);
+        expect(result.data[0].class1.lecturerName).toBe("");
+        expect(result.data[0].class2.lecturerName).toBe("lecturer-b");
+    });
+
+    it("should filter out incomplete conflict entries when one class detail is missing", async () => {
+        const firstQueryForms: any[] = [
+            {
+                id: "f1",
+                studentId,
+                classId: "class-A",
+                isFinalized: false,
+                class: {
+                    id: "class-A",
+                    name: "A",
+                    lecturerName: "lecturer-a",
+                    isHiddenLecturer: false,
+                    classCapacity: 30,
+                    currentCapacity: 20,
+                    schedules: [{ id: "a1", classId: "class-A", dayOfWeek: 1, startTime: "08:00", endTime: "10:00" }],
+                },
+            },
+            {
+                id: "f2",
+                studentId,
+                classId: "class-B",
+                isFinalized: false,
+                class: {
+                    id: "class-B",
+                    name: "B",
+                    lecturerName: "lecturer-b",
+                    isHiddenLecturer: false,
+                    classCapacity: 30,
+                    currentCapacity: 15,
+                    schedules: [{ id: "b1", classId: "class-B", dayOfWeek: 1, startTime: "09:00", endTime: "11:00" }],
+                },
+            },
+        ];
+
+        const secondQueryForms: any[] = [firstQueryForms[0]];
+
+        findManyMock.mockResolvedValueOnce(firstQueryForms).mockResolvedValueOnce(secondQueryForms);
+
+        const result: any = await service.loadAllConflictClasses(studentId);
+
+        expect(result.success).toBe(true);
+        expect(result.data).toEqual([]);
+    });
 });
