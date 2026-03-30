@@ -1,6 +1,6 @@
 import { StudentFinalizeClassFormService } from "src/studentTakingClassForm/studentFinalizeClassForm.service";
-import { ConflictRequestResponse } from "src/db/response/conflict-req.response";
-import { FailDatabaseResponse } from "src/db/response/fail-db.response";
+import { ConflictRequestResponse } from "src/db/response/systemResponse/conflict-req.response";
+import { FailDatabaseResponse } from "src/db/response/systemResponse/fail-db.response";
 
 type MockSchedule = {
     id: string;

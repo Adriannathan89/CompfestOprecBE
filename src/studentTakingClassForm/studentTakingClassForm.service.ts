@@ -2,9 +2,9 @@ import { Injectable, Inject } from "@nestjs/common";
 import { DRIZZLE, type DrizzleDB } from "src/db/drizzle.provider";
 import { Class, Schedule, Users } from "src/db/schema";
 import { and, eq, gt, sql } from "drizzle-orm";
-import { FailDatabaseResponse } from "src/db/response/fail-db.response";
+import { FailDatabaseResponse } from "src/db/response/systemResponse/fail-db.response";
 import { StudentTakingClassForm } from "src/db/schema";
-import { DatabaseResponse } from "src/db/response/db.response";
+import { DatabaseResponse } from "src/db/response/systemResponse/db.response";
 
 @Injectable()
 export class StudentTakingClassFormService {
@@ -55,6 +55,7 @@ export class StudentTakingClassFormService {
                     classId: classId,
                     takingPosition: position,
                     isFinalized: false,
+                    createdAt: new Date(),
                 })
                 .returning();
 
@@ -67,11 +68,13 @@ export class StudentTakingClassFormService {
             const response = new DatabaseResponse(true, 201, newForm[0], "Successfully enrolled in class");
             return response;
         } catch (error) {
-            await this.db.update(Class)
-                .set({
-                    currentCapacity: sql`${Class.currentCapacity} + 1`,
-                })
-                .where(eq(Class.id, classId));
+            if (error instanceof FailDatabaseResponse && error.message !== "Failed to enroll in class. Class is full") {
+                await this.db.update(Class)
+                    .set({
+                        currentCapacity: sql`${Class.currentCapacity} + 1`,
+                    })
+                    .where(eq(Class.id, classId));
+            }
 
             throw new FailDatabaseResponse(error.message);
         }

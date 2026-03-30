@@ -1,6 +1,6 @@
 import { StudentTakingClassFormService } from "src/studentTakingClassForm/studentTakingClassForm.service";
 import { Class, StudentTakingClassForm, Users } from "src/db/schema";
-import { FailDatabaseResponse } from "src/db/response/fail-db.response";
+import { FailDatabaseResponse } from "src/db/response/systemResponse/fail-db.response";
 
 type State = {
     classRecord: {
@@ -189,6 +189,8 @@ describe("StudentTakingClassFormService", () => {
 
         await expect(service.createStudentTakingClassForm("user-1", "class-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
         expect(state.forms).toHaveLength(0);
+        const classUpdateCalls = dbMock.update.mock.calls.filter((call: unknown[]) => call[0] === Class);
+        expect(classUpdateCalls).toHaveLength(1);
     });
 
     it("should throw when SKS limit is exceeded", async () => {
@@ -211,6 +213,8 @@ describe("StudentTakingClassFormService", () => {
         await expect(service.createStudentTakingClassForm("user-1", "class-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
         expect(mocks.insertReturningMock).not.toHaveBeenCalled();
         expect(state.forms).toHaveLength(0);
+        const classUpdateCalls = dbMock.update.mock.calls.filter((call: unknown[]) => call[0] === Class);
+        expect(classUpdateCalls).toHaveLength(2);
     });
 
     it("should handle race condition: only one create succeeds when one seat is left", async () => {
@@ -278,5 +282,55 @@ describe("StudentTakingClassFormService", () => {
         expect(result.success).toBe(true);
         expect(result.statusCode).toBe(200);
         expect(state.forms).toHaveLength(0);
+    });
+
+    it("should get student taking class forms by student id", async () => {
+        const { dbMock } = createDbMock({
+            classRecord: {
+                id: "class-1",
+                classCapacity: 3,
+                currentCapacity: 2,
+                subject: { sks: 3 },
+            },
+            userRecord: {
+                id: "user-1",
+                currentSKS: 18,
+            },
+            forms: [
+                {
+                    id: "form-1",
+                    studentId: "user-1",
+                    classId: "class-1",
+                    takingPosition: 1,
+                    isFinalized: false,
+                },
+            ],
+        });
+
+        dbMock.query.StudentTakingClassForm = {
+            findMany: jest.fn(async () => [
+                {
+                    id: "form-1",
+                    studentId: "user-1",
+                    classId: "class-1",
+                    takingPosition: 1,
+                    isFinalized: false,
+                    class: {
+                        id: "class-1",
+                        name: "A",
+                        subject: { sks: 3 },
+                    },
+                },
+            ]),
+        };
+
+        const service = new StudentTakingClassFormService(dbMock);
+
+        const result = await service.getStudentTakingClassFormsByStudentId("user-1");
+
+        expect(result.success).toBe(true);
+        expect(result.statusCode).toBe(200);
+        expect(result.message).toBe("Successfully retrieved student taking class forms");
+        expect(result.data).toHaveLength(1);
     });
 });

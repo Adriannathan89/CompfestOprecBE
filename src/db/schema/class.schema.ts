@@ -3,6 +3,7 @@ import { Subject } from "./subject.schema";
 import { Schedule } from "./schedule.schema";
 import { StudentTakingClassForm } from "./studentTakingClassForm.schema";
 import { relations } from "drizzle-orm";
+import { ScoringComponent } from "./scoringComponent.schema";
 
 export const Class = pgTable("class_session", {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -25,4 +26,5 @@ export const classRelations = relations(Class, ({ many, one }) => ({
     }),
     schedules: many(Schedule),
     studentTakingClassForms: many(StudentTakingClassForm),
+    scoringComponents: many(ScoringComponent),
 }));

@@ -2,8 +2,8 @@ import { Inject, Injectable } from "@nestjs/common";
 import { AddScheduleDto } from "./dto/addSchedule.dto";
 import { DRIZZLE, type DrizzleDB } from "src/db/drizzle.provider";
 import { Schedule } from "src/db/schema/schedule.schema";
-import { DatabaseResponse } from "src/db/response/db.response";
-import { FailDatabaseResponse } from "src/db/response/fail-db.response";
+import { DatabaseResponse } from "src/db/response/systemResponse/db.response";
+import { FailDatabaseResponse } from "src/db/response/systemResponse/fail-db.response";
 import { eq } from "drizzle-orm";
 import { UpdateScheduleDto } from "./dto/updateSchedule.to";
 
