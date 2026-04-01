@@ -1,4 +1,5 @@
-import { StudentTakingClassFormService } from "src/studentTakingClassForm/studentTakingClassForm.service";
+import { StudentTakingClassFormGetterService } from "src/studentTakingClassForm/studentTakingClassFormGetter.service";
+import { StudentTakingClassFormUpdaterService } from "src/studentTakingClassForm/studentTakingClassFormUpdater.service";
 import { Class, StudentTakingClassForm, Users } from "src/db/schema";
 import { FailDatabaseResponse } from "src/db/response/systemResponse/fail-db.response";
 
@@ -155,7 +156,7 @@ describe("StudentTakingClassFormService", () => {
             forms: [],
         });
 
-        const service = new StudentTakingClassFormService(dbMock);
+        const service = new StudentTakingClassFormUpdaterService(dbMock);
 
         const result = await service.createStudentTakingClassForm("user-1", "class-1");
 
@@ -185,7 +186,7 @@ describe("StudentTakingClassFormService", () => {
             forms: [],
         });
 
-        const service = new StudentTakingClassFormService(dbMock);
+        const service = new StudentTakingClassFormUpdaterService(dbMock);
 
         await expect(service.createStudentTakingClassForm("user-1", "class-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
         expect(state.forms).toHaveLength(0);
@@ -208,7 +209,7 @@ describe("StudentTakingClassFormService", () => {
             forms: [],
         });
 
-        const service = new StudentTakingClassFormService(dbMock);
+        const service = new StudentTakingClassFormUpdaterService(dbMock);
 
         await expect(service.createStudentTakingClassForm("user-1", "class-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
         expect(mocks.insertReturningMock).not.toHaveBeenCalled();
@@ -232,7 +233,7 @@ describe("StudentTakingClassFormService", () => {
             forms: [],
         });
 
-        const service = new StudentTakingClassFormService(dbMock);
+        const service = new StudentTakingClassFormUpdaterService(dbMock);
 
         const [first, second] = await Promise.allSettled([
             service.createStudentTakingClassForm("user-1", "class-1"),
@@ -275,7 +276,7 @@ describe("StudentTakingClassFormService", () => {
             ],
         });
 
-        const service = new StudentTakingClassFormService(dbMock);
+        const service = new StudentTakingClassFormUpdaterService(dbMock);
 
         const result = await service.deleteStudentTakingClassForm("class-1", "user-1");
 
@@ -324,7 +325,7 @@ describe("StudentTakingClassFormService", () => {
             ]),
         };
 
-        const service = new StudentTakingClassFormService(dbMock);
+        const service = new StudentTakingClassFormGetterService(dbMock);
 
         const result = await service.getStudentTakingClassFormsByStudentId("user-1");
 
@@ -332,6 +333,109 @@ describe("StudentTakingClassFormService", () => {
         expect(result.statusCode).toBe(200);
         expect(result.message).toBe("Successfully retrieved student taking class forms");
         expect(result.data).toHaveLength(1);
+    });
+
+    it("should get student taking class form by id", async () => {
+        const { dbMock } = createDbMock({
+            classRecord: {
+                id: "class-1",
+                classCapacity: 3,
+                currentCapacity: 2,
+                subject: { sks: 3 },
+            },
+            userRecord: {
+                id: "user-1",
+                currentSKS: 18,
+            },
+            forms: [],
+        });
+
+        const createdAt = new Date("2026-04-01T00:00:00.000Z");
+        dbMock.query.StudentTakingClassForm = {
+            findFirst: jest.fn(async () => ({
+                id: "form-1",
+                studentId: "user-1",
+                classId: "class-1",
+                takingPosition: 1,
+                isFinalized: false,
+                createdAt,
+                student: {
+                    username: "student1",
+                },
+            })),
+        };
+
+        const service = new StudentTakingClassFormGetterService(dbMock);
+
+        const result = await service.getStudentTakingClassFormById("form-1");
+
+        expect(result.success).toBe(true);
+        expect(result.statusCode).toBe(200);
+        expect(result.message).toBe("Successfully retrieved student taking class form");
+        expect(result.data).toMatchObject({
+            id: "form-1",
+            studentId: "user-1",
+            classId: "class-1",
+            takingPosition: 1,
+            isFinalized: false,
+            student: {
+                username: "student1",
+            },
+        });
+    });
+
+    it("should throw when student taking class form by id is not found", async () => {
+        const { dbMock } = createDbMock({
+            classRecord: {
+                id: "class-1",
+                classCapacity: 3,
+                currentCapacity: 2,
+                subject: { sks: 3 },
+            },
+            userRecord: {
+                id: "user-1",
+                currentSKS: 18,
+            },
+            forms: [],
+        });
+
+        dbMock.query.StudentTakingClassForm = {
+            findFirst: jest.fn(async () => null),
+        };
+
+        const service = new StudentTakingClassFormGetterService(dbMock);
+
+        await expect(service.getStudentTakingClassFormById("form-1")).rejects.toMatchObject({
+            message: "Student taking class form not found",
+        });
+    });
+
+    it("should throw fallback message when get by id fails without message", async () => {
+        const { dbMock } = createDbMock({
+            classRecord: {
+                id: "class-1",
+                classCapacity: 3,
+                currentCapacity: 2,
+                subject: { sks: 3 },
+            },
+            userRecord: {
+                id: "user-1",
+                currentSKS: 18,
+            },
+            forms: [],
+        });
+
+        dbMock.query.StudentTakingClassForm = {
+            findFirst: jest.fn(async () => {
+                throw {};
+            }),
+        };
+
+        const service = new StudentTakingClassFormGetterService(dbMock);
+
+        await expect(service.getStudentTakingClassFormById("form-1")).rejects.toMatchObject({
+            message: "Failed to retrieve student taking class form",
+        });
     });
 
     it("should throw when class or student is not found during create", async () => {
@@ -351,7 +455,7 @@ describe("StudentTakingClassFormService", () => {
 
         dbMock.query.Class.findFirst.mockResolvedValueOnce(null);
 
-        const service = new StudentTakingClassFormService(dbMock);
+        const service = new StudentTakingClassFormUpdaterService(dbMock);
 
         await expect(service.createStudentTakingClassForm("user-1", "class-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
     });
@@ -377,7 +481,7 @@ describe("StudentTakingClassFormService", () => {
             }),
         };
 
-        const service = new StudentTakingClassFormService(dbMock);
+        const service = new StudentTakingClassFormGetterService(dbMock);
 
         await expect(service.getStudentTakingClassFormsByStudentId("user-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
     });
@@ -403,7 +507,7 @@ describe("StudentTakingClassFormService", () => {
             }),
         };
 
-        const service = new StudentTakingClassFormService(dbMock);
+        const service = new StudentTakingClassFormGetterService(dbMock);
 
         await expect(service.getStudentTakingClassFormsByStudentId("user-1")).rejects.toMatchObject({
             message: "Failed to retrieve student taking class forms",
@@ -425,7 +529,7 @@ describe("StudentTakingClassFormService", () => {
             forms: [],
         });
 
-        const service = new StudentTakingClassFormService(dbMock);
+        const service = new StudentTakingClassFormUpdaterService(dbMock);
 
         await expect(service.deleteStudentTakingClassForm("class-1", "user-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
     });
@@ -455,7 +559,7 @@ describe("StudentTakingClassFormService", () => {
 
         dbMock.query.Users.findFirst.mockResolvedValueOnce(null);
 
-        const service = new StudentTakingClassFormService(dbMock);
+        const service = new StudentTakingClassFormUpdaterService(dbMock);
 
         await expect(service.deleteStudentTakingClassForm("class-1", "user-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
     });

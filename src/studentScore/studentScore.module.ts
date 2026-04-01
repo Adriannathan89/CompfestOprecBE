@@ -1,12 +1,19 @@
 import { Module } from "@nestjs/common";
-import { StudentScoreService } from "./studentScore.service";
+import { StudentScoreUpdaterService } from "./studentScoreUpdater.service";
 import { StudentScoreController } from "./studentScore.controller";
 import { DrizzleModule } from "src/db/db.module";
+import { StudentScoreGetterService } from "./studentScoreGetter.service";
 
 @Module({
     imports: [DrizzleModule],
-    providers: [StudentScoreService],
+    providers: [
+        StudentScoreUpdaterService,
+        StudentScoreGetterService
+    ],
     controllers: [StudentScoreController],
-    exports: [StudentScoreService]
+    exports: [
+        StudentScoreUpdaterService, 
+        StudentScoreGetterService
+    ]
 })
 export class StudentScoreModule {}

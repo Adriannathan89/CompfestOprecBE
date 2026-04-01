@@ -7,7 +7,7 @@ import { StudentTakingClassForm } from "src/db/schema";
 import { DatabaseResponse } from "src/db/response/systemResponse/db.response";
 
 @Injectable()
-export class StudentTakingClassFormService {
+export class StudentTakingClassFormUpdaterService {
     constructor(
         @Inject(DRIZZLE) private readonly db: DrizzleDB
     ) { }
@@ -80,25 +80,6 @@ export class StudentTakingClassFormService {
         }
     }
 
-    async getStudentTakingClassFormsByStudentId(studentId: string) {
-        try {
-            const forms = await this.db.query.StudentTakingClassForm.findMany({
-                where: eq(StudentTakingClassForm.studentId, studentId),
-                with: {
-                    class: {
-                        with: {
-                            subject: true,
-                        }
-                    }
-                }
-            });
-            const response = new DatabaseResponse(true, 200, forms, "Successfully retrieved student taking class forms");
-            return response;
-        } catch (error) {
-            throw new FailDatabaseResponse(error.message || "Failed to retrieve student taking class forms");
-        }
-    }
-
     async deleteStudentTakingClassForm(classId: string, studentId: string) {
         try {
             const form = await this.db.delete(StudentTakingClassForm)
@@ -144,4 +125,5 @@ export class StudentTakingClassFormService {
             throw new FailDatabaseResponse(error.message);
         }
     }
+
 }

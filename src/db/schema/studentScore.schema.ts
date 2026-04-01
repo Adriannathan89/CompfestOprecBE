@@ -1,4 +1,4 @@
-import { pgTable, uuid, boolean, numeric } from "drizzle-orm/pg-core";
+import { pgTable, uuid, boolean, numeric, uniqueIndex } from "drizzle-orm/pg-core";
 import { StudentTakingClassForm } from "../schema";
 import { ScoringComponent } from "./scoringComponent.schema";
 import { relations } from "drizzle-orm";
@@ -15,7 +15,10 @@ export const StudentScore = pgTable("student_score", {
     percentage: numeric("percentage", { precision: 10, scale: 2 })
         .notNull()
         .default("0.00")
-});
+}, (table) => [
+    uniqueIndex("student_score_scoring_component_form_unique")
+        .on(table.scoringComponentId, table.studentTakingClassFormId),
+]);
 
 export const studentScoreRelations = relations(StudentScore, ({ one }) => ({
     scoringComponent: one(ScoringComponent, {

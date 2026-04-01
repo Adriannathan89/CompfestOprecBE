@@ -7,6 +7,7 @@ import { DatabaseResponse } from "src/db/response/systemResponse/db.response";
 import { FailDatabaseResponse } from "src/db/response/systemResponse/fail-db.response";
 import { UpdateClassInfoDto } from "./dto/update-class-info.dto";
 import { eq } from "drizzle-orm";
+import { ClassParticipantResponse } from "src/db/response/customSchemaResponse/classParticipant.response";
 
 @Injectable()
 export class ClassService {
@@ -119,7 +120,20 @@ export class ClassService {
                 },
                 where: eq(StudentTakingClassForm.classId, classId),
             });
-            const databaseResponse = new DatabaseResponse(true, 200, participants, "Class participants retrieved successfully");
+
+            const responseData: ClassParticipantResponse[] = participants.map(participant => ({
+                id: participant.id,
+                classId: participant.classId,
+                studentId: participant.studentId,
+                student: {
+                    username: participant.student.username,
+                },
+                takingPosition: participant.takingPosition,
+                isFinalized: participant.isFinalized,
+                createdAt: participant.createdAt,
+            }));
+
+            const databaseResponse = new DatabaseResponse(true, 200, responseData, "Class participants retrieved successfully");
             return databaseResponse;
         } catch (error) {
             throw new FailDatabaseResponse("Failed to retrieve class participants");

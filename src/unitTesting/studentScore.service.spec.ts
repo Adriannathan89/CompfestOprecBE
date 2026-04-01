@@ -1,51 +1,33 @@
-import { StudentScoreService } from "src/studentScore/studentScore.service";
-import { StudentScore } from "src/db/schema/studentScore.schema";
 import { FailDatabaseResponse } from "src/db/response/systemResponse/fail-db.response";
+import { StudentScoreGetterService } from "src/studentScore/studentScoreGetter.service";
+import { StudentScoreUpdaterService } from "src/studentScore/studentScoreUpdater.service";
 
-describe("StudentScoreService", () => {
-    function createDbMock() {
+describe("StudentScoreUpdaterService", () => {
+    function createUpdaterDbMock() {
         const insertValuesMock = jest.fn();
+        const insertOnConflictDoUpdateMock = jest.fn();
         const insertReturningMock = jest.fn();
-        const updateSetMock = jest.fn();
-        const updateWhereMock = jest.fn();
-        const updateReturningMock = jest.fn();
         const deleteWhereMock = jest.fn();
-        const scoreFindManyMock = jest.fn();
 
-        insertValuesMock.mockReturnValue({ returning: insertReturningMock });
-        updateWhereMock.mockReturnValue({ returning: updateReturningMock });
-        updateSetMock.mockReturnValue({ where: updateWhereMock });
+        const insertChain = {
+            values: (payload: unknown) => {
+                insertValuesMock(payload);
+                return {
+                    onConflictDoUpdate: (conflictPayload: unknown) => {
+                        insertOnConflictDoUpdateMock(conflictPayload);
+                        return {
+                            returning: insertReturningMock,
+                        };
+                    },
+                };
+            },
+        };
+
         deleteWhereMock.mockResolvedValue(undefined);
 
         const dbMock: any = {
-            query: {
-                StudentScore: {
-                    findMany: scoreFindManyMock,
-                },
-            },
-            insert: jest.fn((table: unknown) => {
-                if (table !== StudentScore) {
-                    throw new Error("Unexpected table for insert");
-                }
-
-                return {
-                    values: insertValuesMock,
-                };
-            }),
-            update: jest.fn((table: unknown) => {
-                if (table !== StudentScore) {
-                    throw new Error("Unexpected table for update");
-                }
-
-                return {
-                    set: updateSetMock,
-                };
-            }),
-            delete: jest.fn((table: unknown) => {
-                if (table !== StudentScore) {
-                    throw new Error("Unexpected table for delete");
-                }
-
+            insert: jest.fn(() => insertChain),
+            delete: jest.fn(() => {
                 return {
                     where: deleteWhereMock,
                 };
@@ -56,18 +38,15 @@ describe("StudentScoreService", () => {
             dbMock,
             mocks: {
                 insertValuesMock,
+                insertOnConflictDoUpdateMock,
                 insertReturningMock,
-                updateSetMock,
-                updateWhereMock,
-                updateReturningMock,
                 deleteWhereMock,
-                scoreFindManyMock,
             },
         };
     }
 
-    it("should input student score", async () => {
-        const { dbMock, mocks } = createDbMock();
+    it("should create student score", async () => {
+        const { dbMock, mocks } = createUpdaterDbMock();
         mocks.insertReturningMock.mockResolvedValueOnce([
             {
                 id: "score-1",
@@ -78,7 +57,7 @@ describe("StudentScoreService", () => {
             },
         ]);
 
-        const service = new StudentScoreService(dbMock);
+        const service = new StudentScoreUpdaterService(dbMock);
 
         const result = await service.inputStudentScore({
             studentTakingClassFormId: "form-1",
@@ -95,38 +74,42 @@ describe("StudentScoreService", () => {
                 isPublished: true,
             }),
         );
+        expect(mocks.insertOnConflictDoUpdateMock).toHaveBeenCalledTimes(1);
         expect(result.success).toBe(true);
-        expect(result.statusCode).toBe(201);
-        expect(result.message).toBe("Student score input successfully");
+        expect(result.statusCode).toBe(200);
+        expect(result.message).toBe("Student score upserted successfully");
     });
 
-    it("should update student score", async () => {
-        const { dbMock, mocks } = createDbMock();
-        mocks.updateReturningMock.mockResolvedValueOnce([
+    it("should update student score when duplicate exists", async () => {
+        const { dbMock, mocks } = createUpdaterDbMock();
+        mocks.insertReturningMock.mockResolvedValueOnce([
             {
                 id: "score-1",
-                percentage: "88",
+                studentTakingClassFormId: "form-1",
+                scoringComponentId: "component-1",
+                percentage: "90",
                 isPublished: true,
             },
         ]);
 
-        const service = new StudentScoreService(dbMock);
+        const service = new StudentScoreUpdaterService(dbMock);
 
-        const result = await service.updateStudentScore("score-1", {
-            percentage: "88",
+        const result = await service.inputStudentScore({
+            studentTakingClassFormId: "form-1",
+            scoringComponentId: "component-1",
+            percentage: "90",
             isPublished: true,
         });
 
-        expect(mocks.updateSetMock).toHaveBeenCalledWith({ percentage: "88", isPublished: true });
+        expect(mocks.insertOnConflictDoUpdateMock).toHaveBeenCalledTimes(1);
         expect(result.success).toBe(true);
         expect(result.statusCode).toBe(200);
-        expect(result.data).toMatchObject({ id: "score-1", percentage: "88" });
+        expect(result.message).toBe("Student score upserted successfully");
     });
 
     it("should delete student score", async () => {
-        const { dbMock, mocks } = createDbMock();
-
-        const service = new StudentScoreService(dbMock);
+        const { dbMock, mocks } = createUpdaterDbMock();
+        const service = new StudentScoreUpdaterService(dbMock);
 
         const result = await service.deleteStudentScore("score-1");
 
@@ -136,8 +119,52 @@ describe("StudentScoreService", () => {
         expect(result.data).toBeNull();
     });
 
+    it("should throw fail response when input student score insert fails", async () => {
+        const { dbMock, mocks } = createUpdaterDbMock();
+        mocks.insertReturningMock.mockRejectedValueOnce(new Error("insert failed"));
+
+        const service = new StudentScoreUpdaterService(dbMock);
+
+        await expect(service.inputStudentScore({
+            studentTakingClassFormId: "form-1",
+            scoringComponentId: "component-1",
+            percentage: "80",
+            isPublished: true,
+        })).rejects.toBeInstanceOf(FailDatabaseResponse);
+    });
+
+    it("should throw fail response when delete student score fails", async () => {
+        const { dbMock, mocks } = createUpdaterDbMock();
+        mocks.deleteWhereMock.mockRejectedValueOnce(new Error("delete failed"));
+
+        const service = new StudentScoreUpdaterService(dbMock);
+
+        await expect(service.deleteStudentScore("score-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
+    });
+});
+
+describe("StudentScoreGetterService", () => {
+    function createGetterDbMock() {
+        const scoreFindManyMock = jest.fn();
+
+        const dbMock: any = {
+            query: {
+                StudentScore: {
+                    findMany: scoreFindManyMock,
+                },
+            },
+        };
+
+        return {
+            dbMock,
+            mocks: {
+                scoreFindManyMock,
+            },
+        };
+    }
+
     it("should calculate final score as final when all components are published", async () => {
-        const { dbMock, mocks } = createDbMock();
+        const { dbMock, mocks } = createGetterDbMock();
         mocks.scoreFindManyMock.mockResolvedValueOnce([
             {
                 id: "score-1",
@@ -159,7 +186,7 @@ describe("StudentScoreService", () => {
             },
         ]);
 
-        const service = new StudentScoreService(dbMock);
+        const service = new StudentScoreGetterService(dbMock);
 
         const result: any = await service.calculateFinalScore("form-1");
 
@@ -176,7 +203,7 @@ describe("StudentScoreService", () => {
     });
 
     it("should calculate partial score and exclude unpublished component from weighted score", async () => {
-        const { dbMock, mocks } = createDbMock();
+        const { dbMock, mocks } = createGetterDbMock();
         mocks.scoreFindManyMock.mockResolvedValueOnce([
             {
                 id: "score-1",
@@ -198,7 +225,7 @@ describe("StudentScoreService", () => {
             },
         ]);
 
-        const service = new StudentScoreService(dbMock);
+        const service = new StudentScoreGetterService(dbMock);
 
         const result: any = await service.calculateFinalScore("form-1");
 
@@ -214,7 +241,7 @@ describe("StudentScoreService", () => {
     });
 
     it("should map exact boundary score 80 to grade A-", async () => {
-        const { dbMock, mocks } = createDbMock();
+        const { dbMock, mocks } = createGetterDbMock();
         mocks.scoreFindManyMock.mockResolvedValueOnce([
             {
                 id: "score-1",
@@ -227,7 +254,7 @@ describe("StudentScoreService", () => {
             },
         ]);
 
-        const service = new StudentScoreService(dbMock);
+        const service = new StudentScoreGetterService(dbMock);
 
         const result: any = await service.calculateFinalScore("form-1");
 
@@ -237,54 +264,19 @@ describe("StudentScoreService", () => {
     });
 
     it("should throw fail response when calculate final score query fails", async () => {
-        const { dbMock, mocks } = createDbMock();
+        const { dbMock, mocks } = createGetterDbMock();
         mocks.scoreFindManyMock.mockRejectedValueOnce(new Error("db error"));
 
-        const service = new StudentScoreService(dbMock);
+        const service = new StudentScoreGetterService(dbMock);
 
         await expect(service.calculateFinalScore("form-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
     });
 
-    it("should throw fail response when input student score insert fails", async () => {
-        const { dbMock, mocks } = createDbMock();
-        mocks.insertReturningMock.mockRejectedValueOnce(new Error("insert failed"));
-
-        const service = new StudentScoreService(dbMock);
-
-        await expect(service.inputStudentScore({
-            studentTakingClassFormId: "form-1",
-            scoringComponentId: "component-1",
-            percentage: "80",
-            isPublished: true,
-        })).rejects.toBeInstanceOf(FailDatabaseResponse);
-    });
-
-    it("should throw fail response when update student score update fails", async () => {
-        const { dbMock, mocks } = createDbMock();
-        mocks.updateReturningMock.mockRejectedValueOnce(new Error("update failed"));
-
-        const service = new StudentScoreService(dbMock);
-
-        await expect(service.updateStudentScore("score-1", {
-            percentage: "88",
-            isPublished: true,
-        })).rejects.toBeInstanceOf(FailDatabaseResponse);
-    });
-
-    it("should throw fail response when delete student score delete fails", async () => {
-        const { dbMock, mocks } = createDbMock();
-        mocks.deleteWhereMock.mockRejectedValueOnce(new Error("delete failed"));
-
-        const service = new StudentScoreService(dbMock);
-
-        await expect(service.deleteStudentScore("score-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
-    });
-
     it("should return E with zero score when no components are found", async () => {
-        const { dbMock, mocks } = createDbMock();
+        const { dbMock, mocks } = createGetterDbMock();
         mocks.scoreFindManyMock.mockResolvedValueOnce([]);
 
-        const service = new StudentScoreService(dbMock);
+        const service = new StudentScoreGetterService(dbMock);
 
         const result: any = await service.calculateFinalScore("form-1");
 
@@ -304,7 +296,7 @@ describe("StudentScoreService", () => {
         { score: "50", expectedGrade: "D" },
         { score: "49.99", expectedGrade: "E" },
     ])("should map score $score to $expectedGrade", async ({ score, expectedGrade }) => {
-        const { dbMock, mocks } = createDbMock();
+        const { dbMock, mocks } = createGetterDbMock();
         mocks.scoreFindManyMock.mockResolvedValueOnce([
             {
                 id: "score-1",
@@ -317,10 +309,43 @@ describe("StudentScoreService", () => {
             },
         ]);
 
-        const service = new StudentScoreService(dbMock);
+        const service = new StudentScoreGetterService(dbMock);
 
         const result: any = await service.calculateFinalScore("form-1");
 
         expect(result.data.FinalGrade).toBe(expectedGrade);
+    });
+
+    it("should get student scores by student taking class form id", async () => {
+        const { dbMock, mocks } = createGetterDbMock();
+        mocks.scoreFindManyMock.mockResolvedValueOnce([
+            {
+                id: "score-1",
+                percentage: "90",
+                isPublished: true,
+                scoringComponent: {
+                    name: "Quiz",
+                    weight: 20,
+                },
+            },
+        ]);
+
+        const service = new StudentScoreGetterService(dbMock);
+
+        const result: any = await service.getStudentScoreByStudentTakingClassFormId("form-1");
+
+        expect(result.success).toBe(true);
+        expect(result.statusCode).toBe(200);
+        expect(result.message).toBe("Student scores retrieved successfully");
+        expect(result.data).toHaveLength(1);
+    });
+
+    it("should throw fail response when get student scores query fails", async () => {
+        const { dbMock, mocks } = createGetterDbMock();
+        mocks.scoreFindManyMock.mockRejectedValueOnce(new Error("db error"));
+
+        const service = new StudentScoreGetterService(dbMock);
+
+        await expect(service.getStudentScoreByStudentTakingClassFormId("form-1")).rejects.toBeInstanceOf(FailDatabaseResponse);
     });
 });
