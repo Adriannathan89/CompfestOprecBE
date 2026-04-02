@@ -6,3 +6,5 @@ export * from "./schema/role.schema";
 export * from "./schema/userRole.schema";
 export * from "./schema/session.schema";
 export * from "./schema/studentTakingClassForm.schema";
+export * from "./schema/scoringComponent.schema";
+export * from "./schema/studentScore.schema";

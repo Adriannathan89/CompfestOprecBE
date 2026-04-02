@@ -4,11 +4,11 @@ import { JwtService } from "@nestjs/jwt";
 import { LoginDto } from "./dto/login.dto";
 import { Users } from "src/db/schema";
 import { eq } from "drizzle-orm";
-import { DatabaseResponse } from "src/db/response/db.response";
+import { DatabaseResponse } from "src/db/response/systemResponse/db.response";
 import * as bcrypt from "bcrypt";
 import { JwtPayload } from "src/guard/jwt-strategy.guard";
 import { Session } from "src/db/schema/session.schema";
-import { BadRequestResponse } from "src/db/response/bad-req.response";
+import { BadRequestResponse } from "src/db/response/systemResponse/bad-req.response";
 
 @Injectable()
 export class AuthService {

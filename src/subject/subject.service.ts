@@ -2,11 +2,11 @@ import { Inject, Injectable } from "@nestjs/common";
 import { AddSubjectDto } from "./dto/add-subject.dto";
 import { DRIZZLE, type DrizzleDB } from "src/db/drizzle.provider";
 import { Subject } from "src/db/schema";
-import { DatabaseResponse } from "src/db/response/db.response";
+import { DatabaseResponse } from "src/db/response/systemResponse/db.response";
 import { eq } from "drizzle-orm";
 import { UpdateSubjectDto } from "./dto/update-subject.dto";
-import { FailDatabaseResponse } from "src/db/response/fail-db.response";
-import { type SubjectRequestByStudentResponse } from "src/db/response/subjectRequestByStudentResponse";
+import { FailDatabaseResponse } from "src/db/response/systemResponse/fail-db.response";
+import { type SubjectRequestByStudentResponse } from "src/db/response/customSchemaResponse/subjectRequestByStudent.response";
 
 @Injectable()
 export class SubjectService {

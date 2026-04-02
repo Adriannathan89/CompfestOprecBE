@@ -3,10 +3,11 @@ import { DRIZZLE, type DrizzleDB } from "src/db/drizzle.provider";
 import { Injectable } from "@nestjs/common";
 import { AddClassDto } from "./dto/add-class.dto";
 import { Class, StudentTakingClassForm } from "src/db/schema";
-import { DatabaseResponse } from "src/db/response/db.response";
-import { FailDatabaseResponse } from "src/db/response/fail-db.response";
+import { DatabaseResponse } from "src/db/response/systemResponse/db.response";
+import { FailDatabaseResponse } from "src/db/response/systemResponse/fail-db.response";
 import { UpdateClassInfoDto } from "./dto/update-class-info.dto";
 import { eq } from "drizzle-orm";
+import { ClassParticipantResponse } from "src/db/response/customSchemaResponse/classParticipant.response";
 
 @Injectable()
 export class ClassService {
@@ -108,6 +109,34 @@ export class ClassService {
             return databaseResponse;
         } catch (error) {
             throw new FailDatabaseResponse("Failed to retrieve classes");
+        }
+    }
+
+    async getClassParticipants(classId: string) {
+        try {
+            const participants = await this.db.query.StudentTakingClassForm.findMany({
+                with: {
+                    student: true,
+                },
+                where: eq(StudentTakingClassForm.classId, classId),
+            });
+
+            const responseData: ClassParticipantResponse[] = participants.map(participant => ({
+                id: participant.id,
+                classId: participant.classId,
+                studentId: participant.studentId,
+                student: {
+                    username: participant.student.username,
+                },
+                takingPosition: participant.takingPosition,
+                isFinalized: participant.isFinalized,
+                createdAt: participant.createdAt,
+            }));
+
+            const databaseResponse = new DatabaseResponse(true, 200, responseData, "Class participants retrieved successfully");
+            return databaseResponse;
+        } catch (error) {
+            throw new FailDatabaseResponse("Failed to retrieve class participants");
         }
     }
 }

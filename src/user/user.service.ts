@@ -6,10 +6,10 @@ import type { DrizzleDB } from "../db/drizzle.provider";
 import { Users } from "../db/schema/user.schema";
 import { RegisterUserDto } from "./dto/register-user.dto";
 import * as bcrypt from "bcrypt";
-import { DatabaseResponse } from "src/db/response/db.response";
+import { DatabaseResponse } from "src/db/response/systemResponse/db.response";
 import { Role } from "src/db/schema/role.schema";
 import { StudentTakingClassForm, UserRole } from "src/db/schema";
-import { FailDatabaseResponse } from "src/db/response/fail-db.response";
+import { FailDatabaseResponse } from "src/db/response/systemResponse/fail-db.response";
 
 @Injectable()
 export class UserService {
@@ -45,7 +45,7 @@ export class UserService {
                 });
             const res = new DatabaseResponse(true, 201, createdUser[0], "User registered successfully");
             return res;
-            
+
         } catch (error) {
             await this.db.delete(Users).where(eq(Users.id, createdUser[0].id));
             throw new FailDatabaseResponse("Failed to assign role to user");
@@ -53,12 +53,16 @@ export class UserService {
     }
 
     async getFinalizeStatus(userId: string) {
-        const takingForms = await this.db.query.StudentTakingClassForm.findMany({
-            where: eq(StudentTakingClassForm.studentId, userId),
-        });
-        const isFinalized = takingForms[0].isFinalized;
-        
-        const res = new DatabaseResponse(true, 200, { isFinalized }, "Finalize status retrieved successfully");
-        return res;
+        try {
+            const takingForms = await this.db.query.StudentTakingClassForm.findMany({
+                where: eq(StudentTakingClassForm.studentId, userId),
+            });
+            const isFinalized = takingForms[0].isFinalized;
+
+            const res = new DatabaseResponse(true, 200, { isFinalized }, "Finalize status retrieved successfully");
+            return res;
+        } catch (error) {
+            throw new FailDatabaseResponse("Failed to retrieve finalize status");
+        }
     }
 }

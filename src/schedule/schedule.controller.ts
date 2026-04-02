@@ -6,27 +6,33 @@ import { RoleName } from "src/db/schema";
 import { ScheduleService } from "./schedule.service";
 import { AddScheduleDto } from "./dto/addSchedule.dto";
 import { UpdateScheduleDto } from "./dto/updateSchedule.to";
+import { ApiBearerAuth, ApiOperation, ApiTags } from "@nestjs/swagger";
 
 
 @Controller("schedule")
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(RoleName.ADMIN, RoleName.LECTURE)
+@ApiTags("Schedule")
+@ApiBearerAuth("access-token")
 export class ScheduleController {
     constructor(
         private readonly scheduleService: ScheduleService
     ) {}
 
     @Post("create")
+    @ApiOperation({ summary: "Create schedule for a class" })
     async createSchedule(@Body() payload: AddScheduleDto) {
         return await this.scheduleService.createNewSchedule(payload);
     }
 
     @Delete("delete/:id")
+    @ApiOperation({ summary: "Delete schedule by id" })
     async deleteSchedule(@Param("id") id: string) {
         return await this.scheduleService.deleteSchedule(id);
     }
 
     @Patch("update/:id")
+    @ApiOperation({ summary: "Update schedule by id" })
     async updateSchedule(@Param("id") id: string, @Body() payload: UpdateScheduleDto) {
         return await this.scheduleService.updateSchedule(id, payload);
     }

@@ -1,11 +1,11 @@
 import { Injectable, Inject } from "@nestjs/common";
 import { DRIZZLE, type DrizzleDB } from "src/db/drizzle.provider";
 import { and, eq } from "drizzle-orm";
-import { FailDatabaseResponse } from "src/db/response/fail-db.response";
+import { FailDatabaseResponse } from "src/db/response/systemResponse/fail-db.response";
 import { StudentTakingClassForm } from "src/db/schema";
-import { DatabaseResponse } from "src/db/response/db.response";
-import { ConflictRequestResponse } from "src/db/response/conflict-req.response";
-import { ClassResponseByStudent } from "src/db/response/classResponseByStudent";
+import { DatabaseResponse } from "src/db/response/systemResponse/db.response";
+import { ConflictRequestResponse } from "src/db/response/systemResponse/conflict-req.response";
+import { ClassResponseByStudent } from "src/db/response/customSchemaResponse/classResponseByStudent.response";
 
 interface ScheduleConflict {
     class1Id: string;
@@ -117,6 +117,10 @@ export class StudentFinalizeClassFormService {
         const allConflictClasses = res.conflicts.map(conflict => {
             const classData1 = classById.get(conflict.class1Id) as any;
             const classData2 = classById.get(conflict.class2Id) as any;
+
+            if (!classData1 || !classData2) {
+                return { class1: null, class2: null };
+            }
 
             const class1: ClassResponseByStudent = {
                 id: classData1.id,
