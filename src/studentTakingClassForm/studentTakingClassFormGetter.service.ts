@@ -36,6 +36,7 @@ export class StudentTakingClassFormGetterService {
             const form = await this.db.query.StudentTakingClassForm.findFirst({
                 where: eq(StudentTakingClassForm.id, formId),
                 with: {
+                    class: true,
                     student: true,
                 }
             });
@@ -53,6 +54,9 @@ export class StudentTakingClassFormGetterService {
                 createdAt: form.createdAt,
                 student: {
                     username: form.student.username,
+                },
+                class: {
+                    name: form.class.name,
                 }
             }
 

@@ -4,6 +4,7 @@ export class StudentScoringCalculationResponse {
     message: string;
     scoringDetails: {
         scoringComponentName: string;
-        percentage: number;
+        percentage: number | string;
+        weight: number
     }[]
 }

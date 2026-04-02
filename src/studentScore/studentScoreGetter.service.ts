@@ -10,7 +10,7 @@ import { StudentScoringCalculationResponse } from "src/db/response/customSchemaR
 export class StudentScoreGetterService {
     constructor(
         @Inject(DRIZZLE) private readonly db: DrizzleDB
-    ) {}
+    ) { }
 
     private mapScoreToGrade(percentage: number): string {
         if (percentage >= 85) {
@@ -48,17 +48,18 @@ export class StudentScoreGetterService {
             scoringDetails.scoringDetails = [];
 
             const finalScore = scores.reduce((acc, score) => {
-                const percentage = parseFloat(score.percentage) / 100;
+                const percentage = parseFloat(score.percentage);
                 if (!score.isPublished) {
                     isPublishedAll = false;
                 }
 
                 scoringDetails.scoringDetails.push({
                     scoringComponentName: score.scoringComponent.name,
-                    percentage: percentage,
+                    percentage: (score.isPublished ? percentage : "belum dipublikasikan"),
+                    weight: score.scoringComponent.weight,
                 });
 
-                return acc + (score.isPublished ? percentage * score.scoringComponent.weight : 0);
+                return acc + (score.isPublished ? percentage / 100 * score.scoringComponent.weight : 0);
             }, 0);
 
             scoringDetails.FinalGradePercentage = finalScore;

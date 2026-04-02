@@ -5,6 +5,9 @@ export type ClassParticipantResponse = {
     student: {
         username: string;
     }
+    class? : {
+        name: string;
+    }
     takingPosition: number;
     isFinalized: boolean;
     createdAt: Date;
